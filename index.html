@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta name="version" content="3.0.1 Beta Build 20260629-004">
+  <meta name="theme-color" content="#7a4a25">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css?v=20260629-004">
+  <title>Ritter-Kasse – Version 3.0.1 Beta (Build 20260629-004)</title>
+  <style>
+    /* Minimaler Fallback, falls style.css nicht geladen wurde. */
+    #dirtyModal { display:none; }
+    #assetError {
+      display:none;
+      max-width: 480px;
+      margin: 24px auto;
+      padding: 16px;
+      border-radius: 16px;
+      background: #fff7e6;
+      color: #6e4b08;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <main class="phone">
+    <div id="app"></div>
+    <div id="assetError">
+      <strong>Ritter-Kasse konnte nicht vollständig geladen werden.</strong><br><br>
+      Bitte öffne nicht nur <code>index.html</code> alleine, sondern entpacke die komplette ZIP-Datei
+      und lasse <code>index.html</code>, <code>app.js</code>, <code>style.css</code> und die übrigen Dateien
+      im selben Ordner.
+    </div>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <div id="dirtyModal" class="modal-backdrop" style="display:none">
+    <div class="modal">
+      <h2>Änderungen speichern?</h2>
+      <p>Du hast ungespeicherte Änderungen. Was möchtest du tun?</p>
+      <div class="modal-actions">
+        <button class="primary" onclick="dirtyModalSave()">Speichern</button>
+        <button class="secondary" onclick="dirtyModalDiscard()">Verwerfen</button>
+        <button class="ghost" onclick="dirtyModalCancel()">Abbrechen</button>
+      </div>
+    </div>
+  </div>
+
+  <noscript>
+    <div id="assetError" style="display:block">
+      Bitte JavaScript aktivieren. Die Ritter-Kasse benötigt JavaScript.
+    </div>
+  </noscript>
+
+  <script src="app.js?v=20260629-004"></script>
+  <script>
+    setTimeout(function(){
+      if(!window.RITTER_KASSE_LOADED && !document.getElementById("app").innerHTML.trim()){
+        document.getElementById("assetError").style.display = "block";
+      }
+    }, 800);
+  </script>
+</body>
+</html>
