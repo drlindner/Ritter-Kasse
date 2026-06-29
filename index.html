@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Ritter-Kasse v2.0 Beta</title>
+  <title>Ritter-Kasse v2.3 Beta</title>
   <style>
     :root{
       --bg:#f5f1ea; --card:#fffdf9; --text:#20242b; --muted:#746f68;
@@ -127,27 +127,41 @@ function uid(prefix){ return prefix + "_" + Math.random().toString(36).slice(2,9
 function today(){ return new Date().toISOString().slice(0,10); }
 function fmtDate(d){ if(!d) return ""; const [y,m,day]=d.split("-"); return `${day}.${m}.${y}`; }
 function fmtDateRange(v){ return v.endDate ? `${fmtDate(v.startDate)}–${fmtDate(v.endDate)}` : fmtDate(v.startDate); }
-function fmtEUR(n){ return (Math.round((n+Number.EPSILON)*100)/100).toLocaleString("de-DE",{style:"currency",currency:"EUR"}); }
-function parseAmount(s){
+function toCents(value){
+  return Math.round((Number(value) || 0) * 100);
+}
+function fromCents(cents){
+  return cents / 100;
+}
+function fmtEUR(n){
+  return (Math.round((Number(n) || 0) * 100) / 100).toLocaleString("de-DE",{style:"currency",currency:"EUR"});
+}
+function fmtEURFromCents(cents){
+  return (cents / 100).toLocaleString("de-DE",{style:"currency",currency:"EUR"});
+}
+function parseAmountToCents(s){
   const raw = String(s ?? "").trim();
   if(!raw) return NaN;
 
-  // Eurozeichen, Leerzeichen und normale Tausender-Leerzeichen entfernen.
   let cleaned = raw
     .replace(/€/g, "")
     .replace(/\s/g, "")
     .trim();
 
-  // Erlaubt sind nur Ziffern sowie genau optional ein Komma ODER ein Punkt.
-  // Negative Beträge werden bewusst nicht akzeptiert.
+  // Genau ein optionales Dezimaltrennzeichen, Komma oder Punkt; keine negativen Beträge.
   if(!/^\d+([,.]\d{0,2})?$/.test(cleaned)) return NaN;
 
-  // Eingaben wie "12," oder "12." als "12" interpretieren.
-  cleaned = cleaned.replace(",", ".");
-  if(cleaned.endsWith(".")) cleaned = cleaned.slice(0, -1);
+  const parts = cleaned.replace(",", ".").split(".");
+  const euros = Number(parts[0]);
+  const centsPart = (parts[1] || "").padEnd(2, "0");
+  const cents = Number(centsPart || "0");
 
-  const value = Number(cleaned);
-  return Number.isFinite(value) ? value : NaN;
+  if(!Number.isInteger(euros) || !Number.isInteger(cents)) return NaN;
+  return euros * 100 + cents;
+}
+function parseAmount(s){
+  const cents = parseAmountToCents(s);
+  return Number.isNaN(cents) ? NaN : cents / 100;
 }
 function personName(id){ return PEOPLE.find(p=>p.id===id)?.name || id; }
 function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
@@ -228,51 +242,111 @@ function expenseParticipants(e){
   const v=state.ventures.find(x=>x.id===e.ventureId);
   return e.participantIds && e.participantIds.length ? e.participantIds : (v?.participants || []);
 }
+function expenseSplitCents(e){
+  const participants = expenseParticipants(e);
+  if(!participants.length) return [];
+  const amountCents = toCents(e.amount);
+  const baseShare = Math.floor(amountCents / participants.length);
+  let rest = amountCents - baseShare * participants.length;
+
+  const canonical = [...participants].sort((a,b)=>
+    PEOPLE.findIndex(p=>p.id===a) - PEOPLE.findIndex(p=>p.id===b)
+  );
+
+  // Faire Rotation: Restcent starten bei einem ausgabeabhängigen Index.
+  // Dadurch bekommen nicht immer dieselben Personen den Extra-Cent.
+  let seed = 0;
+  for(const ch of String(e.id || e.desc || "")) seed += ch.charCodeAt(0);
+  const start = canonical.length ? seed % canonical.length : 0;
+  const ordered = canonical.slice(start).concat(canonical.slice(0,start));
+
+  const extras = Object.fromEntries(participants.map(pid=>[pid,0]));
+  for(const pid of ordered){
+    if(rest <= 0) break;
+    extras[pid] = 1;
+    rest--;
+  }
+
+  return canonical.map(pid=>({
+    personId: pid,
+    cents: baseShare + extras[pid],
+    extraCent: extras[pid] === 1
+  }));
+}
+
+function hasRestCents(e){
+  const participants = expenseParticipants(e);
+  if(!participants.length) return false;
+  return toCents(e.amount) % participants.length !== 0;
+}
+
+function splitExplanationHtml(e){
+  const participants = expenseParticipants(e);
+  if(!participants.length) return "";
+
+  const amountCents = toCents(e.amount);
+  const rest = amountCents % participants.length;
+  if(rest === 0) return "";
+
+  return `<div class="info-note">ℹ️ Der Betrag lässt sich nicht centgenau gleichmäßig auf ${participants.length} Personen verteilen. Die App verteilt die verbleibenden ${rest} Cent automatisch auf einzelne Beteiligte, damit die Gesamtsumme exakt dem Rechnungsbetrag entspricht.</div>`;
+}
+
 function computeBalances(ventureId=null){
+  // Alle Salden werden intern exakt in Cent als Ganzzahlen berechnet.
   const balances = Object.fromEntries(PEOPLE.map(p=>[p.id,0]));
   const expenses = ventureId ? state.expenses.filter(e=>e.ventureId===ventureId) : state.expenses.filter(e=>{
     const v=state.ventures.find(x=>x.id===e.ventureId);
     return v && v.status==="open" && !v.archived;
   });
+
   for(const e of expenses){
     const participants = expenseParticipants(e);
     if(!participants.length) continue;
-    balances[e.paidBy] += e.amount;
-    const share = e.amount / participants.length;
-    for(const pid of participants) balances[pid] -= share;
+
+    const amountCents = toCents(e.amount);
+    balances[e.paidBy] += amountCents;
+
+    for(const share of expenseSplitCents(e)){
+      balances[share.personId] -= share.cents;
+    }
   }
+
   const payments = ventureId ? state.payments.filter(p=>!p.ventureId || p.ventureId===ventureId) : state.payments;
   for(const p of payments){
-    balances[p.from] += p.amount;
-    balances[p.to] -= p.amount;
+    const amountCents = toCents(p.amount);
+    balances[p.from] += amountCents;
+    balances[p.to] -= amountCents;
   }
-  for(const k of Object.keys(balances)) balances[k] = Math.round(balances[k]*100)/100;
+
   return balances;
 }
 function settlements(balances){
-  const debtors = Object.entries(balances).filter(([_,v])=>v < -0.005).map(([id,v])=>({id, amount:-v}));
-  const creditors = Object.entries(balances).filter(([_,v])=>v > 0.005).map(([id,v])=>({id, amount:v}));
-  debtors.sort((a,b)=>b.amount-a.amount); creditors.sort((a,b)=>b.amount-a.amount);
+  // balances enthält Centwerte.
+  const debtors = Object.entries(balances).filter(([_,v])=>v < 0).map(([id,v])=>({id, amount:-v}));
+  const creditors = Object.entries(balances).filter(([_,v])=>v > 0).map(([id,v])=>({id, amount:v}));
+  debtors.sort((a,b)=>b.amount-a.amount);
+  creditors.sort((a,b)=>b.amount-a.amount);
+
   const result=[];
   let i=0,j=0;
   while(i<debtors.length && j<creditors.length){
     const amt = Math.min(debtors[i].amount, creditors[j].amount);
-    if(amt > 0.004) result.push({from:debtors[i].id, to:creditors[j].id, amount:Math.round(amt*100)/100});
-    debtors[i].amount = Math.round((debtors[i].amount-amt)*100)/100;
-    creditors[j].amount = Math.round((creditors[j].amount-amt)*100)/100;
-    if(debtors[i].amount <= 0.005) i++;
-    if(creditors[j].amount <= 0.005) j++;
+    if(amt > 0) result.push({from:debtors[i].id, to:creditors[j].id, amount:amt});
+    debtors[i].amount -= amt;
+    creditors[j].amount -= amt;
+    if(debtors[i].amount === 0) i++;
+    if(creditors[j].amount === 0) j++;
   }
   return result;
 }
 function totalOpen(){ return settlements(computeBalances()).reduce((s,x)=>s+x.amount,0); }
-function ventureTotal(id){ return ventureExpenses(id).reduce((s,e)=>s+e.amount,0); }
+function ventureTotal(id){ return ventureExpenses(id).reduce((s,e)=>s+toCents(e.amount),0); }
 
 function htmlHeader(){
   return `<section class="hero">
     <small>Stand: ${fmtDate(today())}</small>
     <h1>🏰 Ritter-Kasse</h1>
-    <div class="open"><div><div class="label">Offene Gesamtsumme</div><div style="color:rgba(255,255,255,.78);font-size:13px;margin-top:3px;">über alle offenen Unternehmungen</div></div><div class="value">${fmtEUR(totalOpen())}</div></div>
+    <div class="open"><div><div class="label">Offene Gesamtsumme</div><div style="color:rgba(255,255,255,.78);font-size:13px;margin-top:3px;">über alle offenen Unternehmungen</div></div><div class="value">${fmtEURFromCents(totalOpen())}</div></div>
   </section>`;
 }
 function nav(){
@@ -391,7 +465,7 @@ function pageHeading(title, subtitle=""){
 }
 
 function footer(){
-  return `<div class="footer">Ritter-Kasse – Version 2.0 Beta<br>© 2026 Jürgen Lindner</div>`;
+  return `<div class="footer">Ritter-Kasse – Version 2.3 Beta<br>© 2026 Jürgen Lindner</div>`;
 }
 
 function render(){
@@ -433,7 +507,7 @@ function ventureCard(v){
   return `<div class="venture" onclick="selectedVentureId='${v.id}'; navigate('ventureDetail')">
     <div><div class="venture-title">${escapeHtml(v.name)}</div>
     <div class="venture-meta"><span class="status ${v.status==="open"?"open":"closed"}">${v.status==="open"?"offen":"abgeschlossen"}</span>${fmtDateRange(v)} · erstellt von ${personName(v.createdBy)}<br>${v.participants.length} Teilnehmer · ${ventureExpenses(v.id).length} Ausgaben</div></div>
-    <span class="badge">${fmtEUR(ventureTotal(v.id))}</span>
+    <span class="badge">${fmtEURFromCents(ventureTotal(v.id))}</span>
   </div>`;
 }
 function renderVentures(){
@@ -447,10 +521,10 @@ function renderBalances(ventureId=null, compact=false){
   const b=computeBalances(ventureId);
   const set=settlements(b);
   return `<section class="card"><h2>${ventureId ? "Salden dieser Unternehmung" : "Aktuelle Salden insgesamt"}</h2>
-    ${PEOPLE.map(p=>`<div class="row"><span class="name">${p.name}</span><span class="${b[p.id]>0.005?"pos":b[p.id]<-0.005?"neg":"muted"}">${fmtEUR(b[p.id])}</span></div>`).join("")}
+    ${PEOPLE.map(p=>`<div class="row"><span class="name">${p.name}</span><span class="${b[p.id]>0?"pos":b[p.id]<0?"neg":"muted"}">${fmtEURFromCents(b[p.id])}</span></div>`).join("")}
   </section>
   <section class="card"><h2>Wer zahlt wem?</h2>
-    ${set.length?set.map(s=>`<div class="payline"><span>${personName(s.from)} <span class="arrow">→</span> ${personName(s.to)}</span><span class="amount">${fmtEUR(s.amount)}</span></div>`).join(""):`<div class="muted">Alles ausgeglichen.</div>`}
+    ${set.length?set.map(s=>`<div class="payline"><span>${personName(s.from)} <span class="arrow">→</span> ${personName(s.to)}</span><span class="amount">${fmtEURFromCents(s.amount)}</span></div>`).join(""):`<div class="muted">Alles ausgeglichen.</div>`}
   </section>`;
 }
 function renderNewVenture(){
@@ -517,6 +591,7 @@ function renderVentureExpenses(v){
       const parts=expenseParticipants(e);
       const custom=e.participantIds && e.participantIds.length;
       return `<div class="expense"><div><div class="desc">${escapeHtml(e.desc)}</div><div class="sub">${fmtDate(e.date)} · bezahlt von ${personName(e.paidBy)} · geteilt durch ${parts.length}${custom?" · abweichend":""}</div></div><div class="amount">${fmtEUR(e.amount)}</div>
+      ${splitExplanationHtml(e)}
       <div class="right-buttons" style="grid-column:1 / -1"><button class="ghost mini" onclick="editExpense('${e.id}')">Bearbeiten</button><button class="danger mini" onclick="deleteExpense('${e.id}')">Löschen</button></div></div>`
     }).join(""):"<div class='muted'>Noch keine Ausgaben.</div>"}
   </section>`;
@@ -632,9 +707,9 @@ function savePayment(silent=false){
 function renderSettings(){
   return `<section class="card"><h2>Einstellungen</h2>
     <div class="warning">
-      Version 2.0 Beta speichert alle Daten weiterhin ausschließlich lokal in diesem Browser auf diesem Gerät.
+      Version 2.3 Beta speichert alle Daten weiterhin ausschließlich lokal in diesem Browser auf diesem Gerät.
       Es findet noch keine Synchronisation zwischen mehreren Geräten oder Personen statt.
-      Die Menüpunkte unten sind teilweise bereits vorgesehen, aber noch nicht alle aktiv.
+      Die Menüpunkte unten sind teilweise bereits vorgesehen, aber noch nicht alle aktiv. Die Abrechnung wird ab Version 2.1 centgenau mit Ganzzahl-Arithmetik berechnet. Ab Version 2.3 zeigt die App bei Restcent-Aufteilungen einen kompakten Hinweis direkt bei den betroffenen Ausgaben an.
     </div>
   </section>
   <section class="card"><h2>Daten</h2>
