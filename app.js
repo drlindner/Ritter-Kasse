@@ -1,5 +1,5 @@
 const APP_VERSION = "3.2";
-const APP_BUILD = "20260630-003";
+const APP_BUILD = "20260630-004";
 
 const PEOPLE = [
   {id:"andre", name:"André"},
@@ -362,7 +362,7 @@ function pageHeading(title, subtitle=""){
 }
 
 function footer(){
-  return `<div class="footer">Ritter-Kasse – Version 3.2<br>Build 20260630-003<br>© 2026 Jürgen Lindner</div>`;
+  return `<div class="footer">Ritter-Kasse – Version 3.2<br>Build 20260630-004<br>© 2026 Jürgen Lindner</div>`;
 }
 
 function render(){
@@ -649,5 +649,5 @@ if ("serviceWorker" in navigator && location.protocol !== "file:") {
   });
 }
 
-console.log("Ritter-Kasse 3.2 (Build 20260630-003)");
+console.log("Ritter-Kasse 3.2 (Build 20260630-004)");
 
