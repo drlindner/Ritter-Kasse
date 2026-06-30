@@ -78,26 +78,10 @@
     .modal-actions{display:grid;grid-template-columns:1fr;gap:9px}
     .footer{font-size:12px;color:var(--muted);text-align:center;line-height:1.45;margin:22px 0 4px;padding:8px 0}
 
-/* Version 3.11 Beta: robustere Datumsfelder auf kleinen Displays */
-input[type="date"] {
-  max-width: 100%;
-  min-width: 0;
-  width: 100%;
-  padding-left: 11px;
-  padding-right: 8px;
-  font-size: 14px;
-}
 
-.two {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-}
-
-.two > div {
-  min-width: 0;
-}
-
-@media (max-width: 390px) {
-  .two {
-    grid-template-columns: 1fr;
-  }
+/* iPhone: Date-Felder etwas schmaler, damit der Rahmen nicht übersteht */
+input[type="date"]{
+  width:calc(100% - 10px);
+  max-width:calc(100% - 10px);
+  box-sizing:border-box;
 }
