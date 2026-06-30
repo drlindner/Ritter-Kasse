@@ -79,9 +79,12 @@
     .footer{font-size:12px;color:var(--muted);text-align:center;line-height:1.45;margin:22px 0 4px;padding:8px 0}
 
 
-/* iPhone: Date-Felder etwas schmaler, damit der Rahmen nicht übersteht */
+/* iPhone/Safari: native Date-Felder haben oft eine größere Mindestbreite.
+   Deshalb werden nur Datumsfelder deutlich schmaler gesetzt. */
 input[type="date"]{
-  width:calc(100% - 10px);
-  max-width:calc(100% - 10px);
+  width:calc(100% - 36px);
+  max-width:calc(100% - 36px);
+  min-width:0;
   box-sizing:border-box;
+  display:block;
 }
