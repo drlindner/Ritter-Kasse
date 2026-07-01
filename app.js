@@ -1,5 +1,5 @@
-const APP_VERSION = "3.6";
-const APP_BUILD = "20260701-002";
+const APP_VERSION = "3.7";
+const APP_BUILD = "20260701-003";
 
 const PEOPLE = [
   {id:"andre", name:"André"},
@@ -346,6 +346,8 @@ function doBack(){
     editingExpenseId = null;
   }else if(view==="paymentForm"){
     view = "balances";
+  }else if(view==="ventureDetail"){
+    view = "ventures";
   }else{
     view = "start";
   }
@@ -380,11 +382,12 @@ function backLabel(){
   if(view==="newVenture") return "Unternehmungen";
   if(view==="expenseForm") return state.ventures.find(v=>v.id===selectedVentureId)?.name || "Unternehmung";
   if(view==="paymentForm") return "Salden";
+  if(view==="ventureDetail") return "Unternehmungen";
   return "Start";
 }
 
 function isDialogView(){
-  return ["newVenture","expenseForm","paymentForm"].includes(view);
+  return ["newVenture","expenseForm","paymentForm","ventureDetail"].includes(view);
 }
 
 function topbar(){
@@ -397,7 +400,7 @@ function pageHeading(title, subtitle=""){
 }
 
 function footer(){
-  return `<div class="footer">Ritter-Kasse – Version 3.6<br>Build 20260701-002<br>© 2026 Jürgen Lindner</div>`;
+  return `<div class="footer">Ritter-Kasse – Version 3.7<br>Build 20260701-003<br>© 2026 Jürgen Lindner</div>`;
 }
 
 function render(){
@@ -463,9 +466,9 @@ function renderBalances(ventureId=null, compact=false){
   return `<section class="card"><h2>${ventureId ? "Salden dieser Unternehmung" : "Aktuelle Salden insgesamt"}</h2>
     ${PEOPLE.map(p=>`<div class="row"><span class="name">${p.name}</span><span class="${b[p.id]>0?"pos":b[p.id]<0?"neg":"muted"}">${fmtEURFromCents(b[p.id])}</span></div>`).join("")}
   </section>
-  <section class="card"><h2>Wer zahlt wem?</h2>
+  ${compact ? "" : `<section class="card"><h2>Wer zahlt wem?</h2>
     ${set.length?set.map(s=>`<div class="payline"><span>${personName(s.from)} <span class="arrow">→</span> ${personName(s.to)}</span><span class="amount">${fmtEURFromCents(s.amount)}</span></div>`).join(""):`<div class="muted">Alles ausgeglichen.</div>`}
-  </section>`;
+  </section>`}`;
 }
 function renderNewVenture(){
   return `<div class="section-title">Neue Unternehmung</div><p class="hint">Name darf kreativ sein. Das Enddatum ist optional.</p>
@@ -649,9 +652,9 @@ function savePayment(silent=false){
 function renderSettings(){
   return `<section class="card"><h2>Einstellungen</h2>
     <div class="warning">
-      Version 3.6 speichert alle Daten weiterhin ausschließlich lokal in diesem Browser auf diesem Gerät.
+      Version 3.7 speichert alle Daten weiterhin ausschließlich lokal in diesem Browser auf diesem Gerät.
       Es findet noch keine Synchronisation zwischen mehreren Geräten oder Personen statt.
-      Die Menüpunkte unten sind teilweise bereits vorgesehen, aber noch nicht alle aktiv. Die Abrechnung wird ab Version 3.6 centgenau mit Ganzzahl-Arithmetik berechnet. Ab Version 3.6 zeigt die App bei Restcent-Aufteilungen einen kompakten Hinweis direkt bei den betroffenen Ausgaben an.
+      Die Menüpunkte unten sind teilweise bereits vorgesehen, aber noch nicht alle aktiv. Die Abrechnung wird ab Version 3.7 centgenau mit Ganzzahl-Arithmetik berechnet. Ab Version 3.7 zeigt die App bei Restcent-Aufteilungen einen kompakten Hinweis direkt bei den betroffenen Ausgaben an.
     </div>
   </section>
   <section class="card"><h2>Daten</h2>
@@ -694,5 +697,5 @@ if ("serviceWorker" in navigator && location.protocol !== "file:") {
   });
 }
 
-console.log("Ritter-Kasse 3.6 (Build 20260701-002)");
+console.log("Ritter-Kasse 3.7 (Build 20260701-003)");
 

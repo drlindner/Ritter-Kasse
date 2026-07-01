@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.7 – Build 20260701-003
+
+- Startseite vereinfacht: Dort werden nur noch die aktuellen Salden insgesamt angezeigt.
+- Die Detailanzeige „Wer zahlt wem?“ bleibt dem Menüpunkt „Salden“ vorbehalten.
+- Rück-Button in der Detailansicht einzelner Unternehmungen ergänzt.
+- Versionsnummern, Cache-Buster und Service-Worker-Cache konsistent aktualisiert.
+
 ## 3.6 – Build 20260701-002
 
 - Ausgabeformular fachlich klarer formuliert:
