@@ -1,5 +1,5 @@
-const APP_VERSION = "3.7";
-const APP_BUILD = "20260701-003";
+const APP_VERSION = "3.8";
+const APP_BUILD = "20260701-004";
 
 const PEOPLE = [
   {id:"andre", name:"André"},
@@ -395,24 +395,33 @@ function topbar(){
   return `<div class="topbar"><button class="back" onclick="back()">← ${escapeHtml(backLabel())}</button></div>`;
 }
 
-function pageHeading(title, subtitle=""){
-  return `<div class="section-title" style="margin-top:6px">${escapeHtml(title)}</div>${subtitle?`<p class="hint">${escapeHtml(subtitle)}</p>`:""}`;
+function pageIcon(viewName){
+  const icons = {
+    ventures: "⚔️",
+    balances: "💰→💰",
+    settings: "⚙️"
+  };
+  return icons[viewName] || "";
+}
+
+function pageHeading(title, subtitle="", icon=""){
+  return `<div class="page-heading"><div><div class="section-title" style="margin-top:6px">${escapeHtml(title)}</div>${subtitle?`<p class="hint">${escapeHtml(subtitle)}</p>`:""}</div>${icon?`<div class="page-icon" aria-hidden="true">${icon}</div>`:""}</div>`;
 }
 
 function footer(){
-  return `<div class="footer">Ritter-Kasse – Version 3.7<br>Build 20260701-003<br>© 2026 Jürgen Lindner</div>`;
+  return `<div class="footer">Ritter-Kasse – Version 3.8<br>Build 20260701-004<br>© 2026 Jürgen Lindner</div>`;
 }
 
 function render(){
   const app=document.getElementById("app");
   if(view==="start") app.innerHTML = nav()+htmlHeader()+renderStart();
-  if(view==="ventures") app.innerHTML = nav()+topbar()+pageHeading("Unternehmungen","Offene und abgeschlossene Unternehmungen verwalten.")+renderVentures();
+  if(view==="ventures") app.innerHTML = nav()+topbar()+pageHeading("Unternehmungen","Offene und abgeschlossene Unternehmungen verwalten.", pageIcon("ventures"))+renderVentures();
   if(view==="newVenture") app.innerHTML = nav()+topbar()+renderNewVenture();
   if(view==="ventureDetail") app.innerHTML = nav()+topbar()+renderVentureDetail();
   if(view==="expenseForm") app.innerHTML = nav()+topbar()+renderExpenseForm();
   if(view==="paymentForm") app.innerHTML = nav()+topbar()+renderPaymentForm();
-  if(view==="balances") app.innerHTML = nav()+topbar()+pageHeading("Salden","Gesamtabrechnung über alle offenen Unternehmungen.")+renderBalances(null);
-  if(view==="settings") app.innerHTML = nav()+topbar()+pageHeading("Einstellungen","Lokale Daten verwalten.")+renderSettings();
+  if(view==="balances") app.innerHTML = nav()+topbar()+pageHeading("Salden","Gesamtabrechnung über alle offenen Unternehmungen.", pageIcon("balances"))+renderBalances(null);
+  if(view==="settings") app.innerHTML = nav()+topbar()+pageHeading("Einstellungen","Lokale Daten verwalten.", pageIcon("settings"))+renderSettings();
   app.innerHTML += footer();
   attachDirtyListeners();
 }
@@ -652,9 +661,9 @@ function savePayment(silent=false){
 function renderSettings(){
   return `<section class="card"><h2>Einstellungen</h2>
     <div class="warning">
-      Version 3.7 speichert alle Daten weiterhin ausschließlich lokal in diesem Browser auf diesem Gerät.
+      Version 3.8 speichert alle Daten weiterhin ausschließlich lokal in diesem Browser auf diesem Gerät.
       Es findet noch keine Synchronisation zwischen mehreren Geräten oder Personen statt.
-      Die Menüpunkte unten sind teilweise bereits vorgesehen, aber noch nicht alle aktiv. Die Abrechnung wird ab Version 3.7 centgenau mit Ganzzahl-Arithmetik berechnet. Ab Version 3.7 zeigt die App bei Restcent-Aufteilungen einen kompakten Hinweis direkt bei den betroffenen Ausgaben an.
+      Die Menüpunkte unten sind teilweise bereits vorgesehen, aber noch nicht alle aktiv. Die Abrechnung wird ab Version 3.8 centgenau mit Ganzzahl-Arithmetik berechnet. Ab Version 3.8 zeigt die App bei Restcent-Aufteilungen einen kompakten Hinweis direkt bei den betroffenen Ausgaben an.
     </div>
   </section>
   <section class="card"><h2>Daten</h2>
@@ -697,5 +706,5 @@ if ("serviceWorker" in navigator && location.protocol !== "file:") {
   });
 }
 
-console.log("Ritter-Kasse 3.7 (Build 20260701-003)");
+console.log("Ritter-Kasse 3.8 (Build 20260701-004)");
 

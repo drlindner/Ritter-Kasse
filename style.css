@@ -126,3 +126,49 @@ input[type="date"]{
     grid-template-columns:1fr;
   }
 }
+
+/* Version 3.8: dezente Seiten-Piktogramme */
+.page-heading{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+  margin-top:0;
+}
+
+.page-heading .section-title{
+  margin-bottom:6px;
+}
+
+.page-heading .hint{
+  margin-bottom:12px;
+}
+
+.page-icon{
+  flex:0 0 auto;
+  min-width:56px;
+  min-height:56px;
+  margin:12px 4px 0 8px;
+  border-radius:22px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:8px;
+  background:rgba(255,253,249,.72);
+  border:1px solid var(--line);
+  box-shadow:var(--shadow);
+  color:var(--accent);
+  font-size:31px;
+  line-height:1;
+  white-space:nowrap;
+}
+
+@media (max-width:390px){
+  .page-icon{
+    min-width:50px;
+    min-height:50px;
+    font-size:27px;
+    border-radius:19px;
+    margin-right:2px;
+  }
+}

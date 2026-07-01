@@ -1,4 +1,4 @@
-const CACHE_NAME = "ritter-kasse-20260701-003";
+const CACHE_NAME = "ritter-kasse-20260701-004";
 
 // index.html wird bewusst NICHT gecached.
 // Dadurch bleibt die App künftig nicht dauerhaft auf einer alten index.html hängen.

@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.8 – Build 20260701-004
+
+- Dezente Seiten-Piktogramme für die Hauptbereiche ergänzt:
+  - Start: Burg im Titelbereich
+  - Unternehmungen: gekreuzte Schwerter
+  - Salden: Geldfluss-Symbol
+  - Einstellungen: Zahnrad
+- Versionsnummern, Cache-Buster und Service-Worker-Cache konsistent aktualisiert.
+
 ## 3.7 – Build 20260701-003
 
 - Startseite vereinfacht: Dort werden nur noch die aktuellen Salden insgesamt angezeigt.
