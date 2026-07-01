@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.10 – Build 20260701-006
+
+- Einstellungen neu strukturiert in Daten, Verwaltung, Information und Entwicklung.
+- Backup-Export als vollständiges Ritter-Kasse-Backupformat mit App, Schema, Version, Build, Zeitstempel und Daten ergänzt.
+- Backup-Import mit JSON-Prüfung, Strukturvalidierung, Zusammenfassung und Sicherheitsabfrage ergänzt.
+- Backup-Test zur internen Validierung des aktuellen Datenbestands ergänzt.
+- Personen-Seite als vorbereitete Anzeige für die spätere Cloud/Admin-Version ergänzt.
+- Lokale Daten löschen als Entwicklungsfunktion mit zweistufiger Warnung ergänzt.
+- Versionsnummern, Cache-Buster und Service-Worker-Cache konsistent aktualisiert.
+
 ## 3.9 – Build 20260701-005
 
 - Bereichs-Piktogramme in die obere Seitenleiste verschoben.

@@ -1,5 +1,5 @@
-const APP_VERSION = "3.9";
-const APP_BUILD = "20260701-005";
+const APP_VERSION = "3.10";
+const APP_BUILD = "20260701-006";
 
 const PEOPLE = [
   {id:"andre", name:"André"},
@@ -348,6 +348,8 @@ function doBack(){
     view = "balances";
   }else if(view==="ventureDetail"){
     view = "ventures";
+  }else if(["people","about","changelog"].includes(view)){
+    view = "settings";
   }else{
     view = "start";
   }
@@ -367,6 +369,9 @@ function pageTitle(){
   if(view==="ventures") return "Unternehmungen";
   if(view==="balances") return "Salden";
   if(view==="settings") return "Einstellungen";
+  if(view==="people") return "Personen";
+  if(view==="about") return "Über Ritter-Kasse";
+  if(view==="changelog") return "Changelog";
   return "";
 }
 
@@ -377,8 +382,12 @@ function backLabel(){
     if(last.view==="ventures") return "Unternehmungen";
     if(last.view==="balances") return "Salden";
     if(last.view==="settings") return "Einstellungen";
+    if(last.view==="people") return "Personen";
+    if(last.view==="about") return "Über Ritter-Kasse";
+    if(last.view==="changelog") return "Changelog";
     if(last.view==="start") return "Start";
   }
+  if(view==="people" || view==="about" || view==="changelog") return "Einstellungen";
   if(view==="newVenture") return "Unternehmungen";
   if(view==="expenseForm") return state.ventures.find(v=>v.id===selectedVentureId)?.name || "Unternehmung";
   if(view==="paymentForm") return "Salden";
@@ -387,7 +396,7 @@ function backLabel(){
 }
 
 function isDialogView(){
-  return ["newVenture","expenseForm","paymentForm","ventureDetail"].includes(view);
+  return ["newVenture","expenseForm","paymentForm","ventureDetail","people","about","changelog"].includes(view);
 }
 
 function topbar(){
@@ -399,7 +408,7 @@ function topbar(){
 function sectionIcon(viewName=view){
   if(["ventures","ventureDetail","newVenture","expenseForm"].includes(viewName)) return "⚔️";
   if(["balances","paymentForm"].includes(viewName)) return "💰→💰";
-  if(["settings"].includes(viewName)) return "⚙️";
+  if(["settings","people","about","changelog"].includes(viewName)) return "⚙️";
   return "🏰";
 }
 
@@ -408,7 +417,7 @@ function pageHeading(title, subtitle=""){
 }
 
 function footer(){
-  return `<div class="footer">Ritter-Kasse – Version 3.9<br>Build 20260701-005<br>© 2026 Jürgen Lindner</div>`;
+  return `<div class="footer">Ritter-Kasse – Version 3.10<br>Build 20260701-006<br>© 2026 Jürgen Lindner</div>`;
 }
 
 function render(){
@@ -421,6 +430,9 @@ function render(){
   if(view==="paymentForm") app.innerHTML = nav()+topbar()+renderPaymentForm();
   if(view==="balances") app.innerHTML = nav()+topbar()+pageHeading("Salden","Gesamtabrechnung über alle offenen Unternehmungen.")+renderBalances(null);
   if(view==="settings") app.innerHTML = nav()+topbar()+pageHeading("Einstellungen","Lokale Daten verwalten.")+renderSettings();
+  if(view==="people") app.innerHTML = nav()+topbar()+renderPeopleSettings();
+  if(view==="about") app.innerHTML = nav()+topbar()+renderAbout();
+  if(view==="changelog") app.innerHTML = nav()+topbar()+renderChangelog();
   app.innerHTML += footer();
   attachDirtyListeners();
 }
@@ -657,34 +669,313 @@ function savePayment(silent=false){
   if(!silent){ mainNavigate("balances"); toast("Zahlung gespeichert."); }
   return true;
 }
+
+function settingsButton(icon, title, subtitle, action, kind="ghost"){
+  return `<button class="${kind} settings-action" onclick="${action}">
+    <span class="settings-action-icon">${icon}</span>
+    <span><strong>${escapeHtml(title)}</strong><small>${escapeHtml(subtitle)}</small></span>
+  </button>`;
+}
+
 function renderSettings(){
   return `<section class="card"><h2>Einstellungen</h2>
     <div class="warning">
-      Version 3.9 speichert alle Daten weiterhin ausschließlich lokal in diesem Browser auf diesem Gerät.
-      Es findet noch keine Synchronisation zwischen mehreren Geräten oder Personen statt.
-      Die Menüpunkte unten sind teilweise bereits vorgesehen, aber noch nicht alle aktiv. Die Abrechnung wird ab Version 3.9 centgenau mit Ganzzahl-Arithmetik berechnet. Ab Version 3.9 zeigt die App bei Restcent-Aufteilungen einen kompakten Hinweis direkt bei den betroffenen Ausgaben an.
+      Version ${APP_VERSION} speichert alle Daten weiterhin lokal in diesem Browser auf diesem Gerät.
+      Backup und Import sind jetzt aktiv. Die gemeinsame Cloud-Synchronisation folgt später mit Version 4.0.
     </div>
   </section>
-  <section class="card"><h2>Daten</h2>
-    <button class="secondary" onclick="exportData()">Daten exportieren</button>
-    <div class="sub" style="margin-top:7px">Aktiv: exportiert die lokalen Daten als JSON-Datei.</div>
-    <div style="height:10px"></div>
-    <button class="ghost" onclick="toast('Import kommt in einer späteren Version.')">Daten importieren</button>
-    <div class="sub" style="margin-top:7px">Noch nicht aktiv.</div>
+
+  <section class="card settings-group"><h2>Daten</h2>
+    ${settingsButton("⬇️","Backup erstellen","Lokale Daten als JSON-Datei sichern.","exportData()","secondary")}
+    ${settingsButton("⬆️","Backup importieren","Eine zuvor exportierte Sicherung wiederherstellen.","triggerImport()")}
   </section>
-  <section class="card"><h2>Personen</h2>
-    <button class="ghost" onclick="toast('Personen bearbeiten kommt in einer späteren Version.')">Personen bearbeiten</button>
-    <div class="sub" style="margin-top:7px">Noch nicht aktiv. Die fünf Personen sind derzeit fest hinterlegt.</div>
+
+  <section class="card settings-group"><h2>Verwaltung</h2>
+    ${settingsButton("👥","Personen","Aktuelle Personen anzeigen. Bearbeiten folgt mit Cloud/Admin.","navigate('people')")}
   </section>
-  <section class="card"><h2>Demo</h2>
-    <button class="danger" onclick="resetDemo()">Demo-Daten zurücksetzen</button>
+
+  <section class="card settings-group"><h2>Information</h2>
+    ${settingsButton("ℹ️","Über Ritter-Kasse","Version, Build und Speicherhinweise anzeigen.","navigate('about')")}
+    ${settingsButton("📄","Changelog","Versionshistorie anzeigen.","navigate('changelog')")}
+  </section>
+
+  <section class="card settings-group"><h2>Entwicklung</h2>
+    ${settingsButton("🧪","Backup testen","Aktuellen Datenbestand intern als Backup prüfen.","testBackup()")}
+    ${settingsButton("🗑","Lokale Daten löschen","Alle lokalen Unternehmungen, Ausgaben und Zahlungen entfernen.","deleteLocalData()","danger")}
   </section>`;
 }
-function exportData(){
-  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
-  const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download="ritter-kasse-daten.json"; a.click(); URL.revokeObjectURL(url);
+
+function backupObject(){
+  return {
+    app: "Ritter-Kasse",
+    schema: 1,
+    version: APP_VERSION,
+    build: APP_BUILD,
+    created: new Date().toISOString(),
+    people: PEOPLE,
+    data: {
+      ventures: state.ventures || [],
+      expenses: state.expenses || [],
+      payments: state.payments || []
+    }
+  };
 }
-function resetDemo(){ if(confirm("Alle lokalen Daten durch Demo-Daten ersetzen?")){ state=demoState(); save(); selectedVentureId=state.ventures[0].id; historyStack=[]; view="start"; render(); } }
+
+function backupFileName(){
+  const d = new Date();
+  const pad = n => String(n).padStart(2,"0");
+  const stamp = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  return `Ritter-Kasse_Backup_${stamp}.json`;
+}
+
+function normalizeBackup(obj){
+  if(obj && obj.app === "Ritter-Kasse" && obj.data) return obj;
+  if(obj && Array.isArray(obj.ventures) && Array.isArray(obj.expenses) && Array.isArray(obj.payments)){
+    return {
+      app: "Ritter-Kasse",
+      schema: 0,
+      version: "legacy",
+      build: "unknown",
+      created: "",
+      people: PEOPLE,
+      data: {
+        ventures: obj.ventures,
+        expenses: obj.expenses,
+        payments: obj.payments
+      }
+    };
+  }
+  return null;
+}
+
+function validateBackup(obj){
+  const backup = normalizeBackup(obj);
+  const errors = [];
+  if(!backup){ return {ok:false, errors:["Keine gültige Ritter-Kasse-Backup-Datei."], backup:null}; }
+
+  const data = backup.data || {};
+  if(!Array.isArray(data.ventures)) errors.push("ventures fehlt oder ist keine Liste.");
+  if(!Array.isArray(data.expenses)) errors.push("expenses fehlt oder ist keine Liste.");
+  if(!Array.isArray(data.payments)) errors.push("payments fehlt oder ist keine Liste.");
+
+  const peopleIds = new Set(PEOPLE.map(p=>p.id));
+  const ventureIds = new Set((data.ventures || []).map(v=>v.id).filter(Boolean));
+
+  for(const v of data.ventures || []){
+    if(!v.id) errors.push("Eine Unternehmung hat keine ID.");
+    if(!v.name) errors.push(`Unternehmung ${v.id || "ohne ID"} hat keinen Namen.`);
+    for(const pid of (v.participants || [])){
+      if(!peopleIds.has(pid)) errors.push(`Unbekannte Person in Unternehmung "${v.name || v.id}": ${pid}`);
+    }
+    if(v.createdBy && !peopleIds.has(v.createdBy)) errors.push(`Unbekannter Ersteller in Unternehmung "${v.name || v.id}": ${v.createdBy}`);
+  }
+
+  for(const e of data.expenses || []){
+    if(!e.id) errors.push("Eine Ausgabe hat keine ID.");
+    if(!ventureIds.has(e.ventureId)) errors.push(`Ausgabe "${e.desc || e.id}" verweist auf unbekannte Unternehmung.`);
+    if(!peopleIds.has(e.paidBy)) errors.push(`Ausgabe "${e.desc || e.id}" hat unbekannten Zahler: ${e.paidBy}`);
+    if(!Number.isFinite(Number(e.amount)) || Number(e.amount) < 0) errors.push(`Ausgabe "${e.desc || e.id}" hat keinen gültigen Betrag.`);
+    for(const pid of (e.participantIds || [])){
+      if(!peopleIds.has(pid)) errors.push(`Ausgabe "${e.desc || e.id}" enthält unbekannte beteiligte Person: ${pid}`);
+    }
+  }
+
+  for(const p of data.payments || []){
+    if(!peopleIds.has(p.from)) errors.push(`Ausgleichszahlung mit unbekanntem Zahler: ${p.from}`);
+    if(!peopleIds.has(p.to)) errors.push(`Ausgleichszahlung mit unbekanntem Empfänger: ${p.to}`);
+    if(!Number.isFinite(Number(p.amount)) || Number(p.amount) < 0) errors.push("Ausgleichszahlung mit ungültigem Betrag.");
+    if(p.ventureId && !ventureIds.has(p.ventureId)) errors.push("Ausgleichszahlung verweist auf unbekannte Unternehmung.");
+  }
+
+  return {ok: errors.length===0, errors, backup};
+}
+
+function backupSummary(backup){
+  const data = backup.data || {};
+  return `${backup.app || "Ritter-Kasse"}\\nVersion: ${backup.version || "unbekannt"}\\nBuild: ${backup.build || "unbekannt"}\\nErstellt: ${backup.created ? new Date(backup.created).toLocaleString("de-DE") : "unbekannt"}\\n\\n${(backup.people || PEOPLE).length} Personen\\n${(data.ventures || []).length} Unternehmungen\\n${(data.expenses || []).length} Ausgaben\\n${(data.payments || []).length} Ausgleichszahlungen`;
+}
+
+function exportData(){
+  const backup = backupObject();
+  const blob = new Blob([JSON.stringify(backup,null,2)],{type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = backupFileName();
+  a.click();
+  URL.revokeObjectURL(url);
+  toast("Backup erstellt.");
+}
+
+function triggerImport(){
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "application/json,.json";
+  input.onchange = () => {
+    const file = input.files && input.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = () => importBackupText(String(reader.result || ""));
+    reader.onerror = () => toast("Datei konnte nicht gelesen werden.");
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function importBackupText(text){
+  let obj;
+  try{
+    obj = JSON.parse(text);
+  }catch(e){
+    alert("Import fehlgeschlagen:\\n\\nDie Datei enthält kein gültiges JSON.");
+    return;
+  }
+
+  const result = validateBackup(obj);
+  if(!result.ok){
+    alert("Import nicht möglich:\\n\\n" + result.errors.slice(0,12).join("\\n") + (result.errors.length>12 ? "\\n..." : ""));
+    return;
+  }
+
+  const backup = result.backup;
+  const ok = confirm("Backup importieren?\\n\\n" + backupSummary(backup) + "\\n\\nDie aktuellen lokalen Daten werden ersetzt.");
+  if(!ok) return;
+
+  state = {
+    ventures: backup.data.ventures || [],
+    expenses: backup.data.expenses || [],
+    payments: backup.data.payments || []
+  };
+  save();
+  selectedVentureId = state.ventures[0]?.id || null;
+  historyStack = [];
+  editingExpenseId = null;
+  view = "start";
+  clearDirty();
+  render();
+  window.scrollTo(0,0);
+  toast("Import erfolgreich.");
+}
+
+function testBackup(){
+  const result = validateBackup(backupObject());
+  if(result.ok){
+    alert("Backup-Test erfolgreich\\n\\n" + backupSummary(result.backup) + "\\n\\nDas Backup kann später wieder importiert werden.");
+  }else{
+    alert("Backup-Test fehlgeschlagen:\\n\\n" + result.errors.join("\\n"));
+  }
+}
+
+function deleteLocalData(){
+  const first = confirm("Alle lokalen Daten löschen?\\n\\nAlle Unternehmungen, Ausgaben und Zahlungen werden von diesem Gerät entfernt.\\n\\nEs wird empfohlen, vorher ein Backup zu erstellen.");
+  if(!first) return;
+  const second = confirm("Wirklich löschen?\\n\\nDieser Schritt kann nur durch Import eines Backups rückgängig gemacht werden.");
+  if(!second) return;
+
+  state = {ventures:[], expenses:[], payments:[]};
+  save();
+  selectedVentureId = null;
+  historyStack = [];
+  editingExpenseId = null;
+  view = "start";
+  clearDirty();
+  render();
+  window.scrollTo(0,0);
+  toast("Lokale Daten gelöscht.");
+}
+
+function renderPeopleSettings(){
+  return `${pageHeading("Personen","Die Personenverwaltung wird mit der Cloud-Version über Admin-Rechte freigeschaltet.")}
+    <section class="card">
+      <h2>Aktuelle Personen</h2>
+      ${PEOPLE.map(p=>`<div class="row"><span class="name">${escapeHtml(p.name)}</span><span class="muted">${escapeHtml(p.id)}</span></div>`).join("")}
+      <div class="warning">In der lokalen Version können Personen noch nicht geändert werden. So bleiben ältere Unternehmungen, Ausgaben und Backups konsistent.</div>
+    </section>`;
+}
+
+function renderAbout(){
+  return `${pageHeading("Über Ritter-Kasse","Lokale Web-App für gemeinsame Unternehmungen.")}
+    <section class="card">
+      <h2>Version</h2>
+      <div class="row"><span>Version</span><strong>${APP_VERSION}</strong></div>
+      <div class="row"><span>Build</span><strong>${APP_BUILD}</strong></div>
+      <div class="row"><span>Speicherung</span><span class="muted">lokal im Browser</span></div>
+    </section>
+    <section class="card">
+      <h2>Hinweis</h2>
+      <p class="hint" style="margin:0">Die lokale Version synchronisiert noch nicht zwischen mehreren Geräten. Für den Wechsel auf ein anderes Gerät bitte ein Backup exportieren und dort importieren.</p>
+    </section>`;
+}
+
+function renderChangelog(){
+  return `${pageHeading("Changelog","Versionshistorie der lokalen Ritter-Kasse.")}
+    <section class="card"><pre class="changelog-box"># Changelog
+
+## 3.9 – Build 20260701-005
+
+- Bereichs-Piktogramme in die obere Seitenleiste verschoben.
+- Piktogramme erscheinen jetzt auch auf Unterseiten:
+  - Start: Burg
+  - Unternehmungen und Unterseiten: gekreuzte Schwerter
+  - Salden und Ausgleichszahlung: Geldfluss-Symbol
+  - Einstellungen: Zahnrad
+- Versionsnummern, Cache-Buster und Service-Worker-Cache konsistent aktualisiert.
+
+## 3.8 – Build 20260701-004
+
+- Dezente Seiten-Piktogramme für die Hauptbereiche ergänzt:
+  - Start: Burg im Titelbereich
+  - Unternehmungen: gekreuzte Schwerter
+  - Salden: Geldfluss-Symbol
+  - Einstellungen: Zahnrad
+- Versionsnummern, Cache-Buster und Service-Worker-Cache konsistent aktualisiert.
+
+## 3.7 – Build 20260701-003
+
+- Startseite vereinfacht: Dort werden nur noch die aktuellen Salden insgesamt angezeigt.
+- Die Detailanzeige „Wer zahlt wem?“ bleibt dem Menüpunkt „Salden“ vorbehalten.
+- Rück-Button in der Detailansicht einzelner Unternehmungen ergänzt.
+- Versionsnummern, Cache-Buster und Service-Worker-Cache konsistent aktualisiert.
+
+## 3.6 – Build 20260701-002
+
+- Ausgabeformular fachlich klarer formuliert:
+  - „Abweichende Beteiligte für diesen Posten“
+  - „Beteiligte dieses Postens“
+- Hinweis ergänzt: Die zahlende Person muss an diesem Posten bzw. dieser Aktivität nicht beteiligt sein.
+- Versionsnummern, Cache-Buster und Service-Worker-Cache konsistent aktualisiert.
+
+## 3.5 – Build 20260701-001
+
+- Helleres Ritterhelm-/Schatztruhen-Icon als offizielles App-Icon übernommen.
+- Burg-Emoji im Kopfbereich vergrößert und rechts neben den Titel gesetzt.
+- Restcent-Hinweis im Ausgabeformular wird jetzt live aktualisiert, wenn Betrag oder Teilnehmer geändert werden.
+- Datumsfelder aus Version 3.2.1 beibehalten.
+- Versionsnummern, Cache-Buster und Service-Worker-Cache konsistent aktualisiert.
+
+## 3.2 – Build 20260630-003
+
+- Angefügtes Ritterhelm-/Schatztruhen-Icon als offizielles App-Icon übernommen.
+- \`apple-touch-icon.png\` für iPhone-Homescreen ergänzt.
+- \`icon-192.png\` und \`icon-512.png\` aus demselben Icon erzeugt.
+- \`index.html\` um Apple-Homescreen-Metatags ergänzt bzw. aktualisiert.
+- Datumsfelder auf kleinen Displays schmaler und robuster gemacht.
+- Versionsnummer und Build aktualisiert.
+
+## 3.0.1 Beta – Build 20260629-004
+
+- Lokalen Test robuster gemacht.
+- \`dirtyModal\` ist jetzt inline versteckt, falls \`style.css\` nicht geladen wird.
+- Hinweis ergänzt, wenn \`app.js\`/\`style.css\` fehlen.
+- Service Worker wird lokal über \`file://\` nicht registriert.
+
+## 3.0 Beta
+
+- Projektstruktur modernisiert.
+- App in mehrere Dateien aufgeteilt.
+- PWA-Grundstruktur vorbereitet.
+</pre></section>`;
+}
 
 function similarity(a,b){
   a=a.toLowerCase(); b=b.toLowerCase();
@@ -705,5 +996,5 @@ if ("serviceWorker" in navigator && location.protocol !== "file:") {
   });
 }
 
-console.log("Ritter-Kasse 3.9 (Build 20260701-005)");
+console.log("Ritter-Kasse 3.10 (Build 20260701-006)");
 

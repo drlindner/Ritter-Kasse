@@ -4,8 +4,8 @@ Eine kleine Web-App zur Verwaltung gemeinsamer Unternehmungen und Ausgaben.
 
 ## Aktuelle Version
 
-**3.9**  
-**Build:** `20260701-005`
+**3.10**  
+**Build:** `20260701-006`
 
 ## Wichtig zum lokalen Testen
 

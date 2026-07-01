@@ -214,3 +214,53 @@ input[type="date"]{
     border-radius:18px;
   }
 }
+
+/* Version 3.10: Einstellungen, Backup und Import */
+.settings-group{
+  display:grid;
+  gap:10px;
+}
+
+.settings-group h2{
+  margin-bottom:2px;
+}
+
+.settings-action{
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:12px;
+  text-align:left;
+  line-height:1.25;
+}
+
+.settings-action-icon{
+  width:32px;
+  flex:0 0 32px;
+  font-size:23px;
+  text-align:center;
+}
+
+.settings-action strong{
+  display:block;
+  font-size:15px;
+}
+
+.settings-action small{
+  display:block;
+  margin-top:3px;
+  color:var(--muted);
+  font-weight:650;
+  font-size:12px;
+}
+
+.changelog-box{
+  white-space:pre-wrap;
+  word-break:break-word;
+  font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;
+  font-size:12px;
+  line-height:1.45;
+  color:#3d342b;
+  margin:0;
+}
