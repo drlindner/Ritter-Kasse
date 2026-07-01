@@ -172,3 +172,45 @@ input[type="date"]{
     margin-right:2px;
   }
 }
+
+/* Version 3.9: Bereichs-Piktogramme in der oberen Seitenleiste */
+.topbar{
+  justify-content:space-between;
+}
+
+.topbar-icon,
+.section-icon-only{
+  min-width:50px;
+  min-height:50px;
+  border-radius:20px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:7px;
+  background:rgba(255,253,249,.84);
+  border:1px solid var(--line);
+  box-shadow:var(--shadow);
+  color:var(--accent);
+  font-size:29px;
+  line-height:1;
+  white-space:nowrap;
+}
+
+.section-icon-only{
+  margin:2px 2px 12px auto;
+  width:max-content;
+}
+
+.page-icon{
+  display:none;
+}
+
+@media (max-width:390px){
+  .topbar-icon,
+  .section-icon-only{
+    min-width:46px;
+    min-height:46px;
+    font-size:26px;
+    border-radius:18px;
+  }
+}

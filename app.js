@@ -1,5 +1,5 @@
-const APP_VERSION = "3.8";
-const APP_BUILD = "20260701-004";
+const APP_VERSION = "3.9";
+const APP_BUILD = "20260701-005";
 
 const PEOPLE = [
   {id:"andre", name:"André"},
@@ -277,7 +277,7 @@ function ventureTotal(id){ return ventureExpenses(id).reduce((s,e)=>s+toCents(e.
 function htmlHeader(){
   return `<section class="hero">
     <small>Stand: ${fmtDate(today())}</small>
-    <div class="hero-title"><h1>Ritter-Kasse</h1><div class="hero-castle" aria-hidden="true">🏰</div></div>
+    <h1>Ritter-Kasse</h1>
     <div class="open"><div><div class="label">Offene Gesamtsumme</div><div style="color:rgba(255,255,255,.78);font-size:13px;margin-top:3px;">über alle offenen Unternehmungen</div></div><div class="value">${fmtEURFromCents(totalOpen())}</div></div>
   </section>`;
 }
@@ -391,37 +391,36 @@ function isDialogView(){
 }
 
 function topbar(){
-  if(!isDialogView()) return "";
-  return `<div class="topbar"><button class="back" onclick="back()">← ${escapeHtml(backLabel())}</button></div>`;
+  const icon = sectionIcon(view);
+  if(!isDialogView()) return `<div class="section-icon-only" aria-hidden="true">${icon}</div>`;
+  return `<div class="topbar"><button class="back" onclick="back()">← ${escapeHtml(backLabel())}</button><div class="topbar-icon" aria-hidden="true">${icon}</div></div>`;
 }
 
-function pageIcon(viewName){
-  const icons = {
-    ventures: "⚔️",
-    balances: "💰→💰",
-    settings: "⚙️"
-  };
-  return icons[viewName] || "";
+function sectionIcon(viewName=view){
+  if(["ventures","ventureDetail","newVenture","expenseForm"].includes(viewName)) return "⚔️";
+  if(["balances","paymentForm"].includes(viewName)) return "💰→💰";
+  if(["settings"].includes(viewName)) return "⚙️";
+  return "🏰";
 }
 
-function pageHeading(title, subtitle="", icon=""){
-  return `<div class="page-heading"><div><div class="section-title" style="margin-top:6px">${escapeHtml(title)}</div>${subtitle?`<p class="hint">${escapeHtml(subtitle)}</p>`:""}</div>${icon?`<div class="page-icon" aria-hidden="true">${icon}</div>`:""}</div>`;
+function pageHeading(title, subtitle=""){
+  return `<div class="section-title" style="margin-top:6px">${escapeHtml(title)}</div>${subtitle?`<p class="hint">${escapeHtml(subtitle)}</p>`:""}`;
 }
 
 function footer(){
-  return `<div class="footer">Ritter-Kasse – Version 3.8<br>Build 20260701-004<br>© 2026 Jürgen Lindner</div>`;
+  return `<div class="footer">Ritter-Kasse – Version 3.9<br>Build 20260701-005<br>© 2026 Jürgen Lindner</div>`;
 }
 
 function render(){
   const app=document.getElementById("app");
-  if(view==="start") app.innerHTML = nav()+htmlHeader()+renderStart();
-  if(view==="ventures") app.innerHTML = nav()+topbar()+pageHeading("Unternehmungen","Offene und abgeschlossene Unternehmungen verwalten.", pageIcon("ventures"))+renderVentures();
+  if(view==="start") app.innerHTML = nav()+topbar()+htmlHeader()+renderStart();
+  if(view==="ventures") app.innerHTML = nav()+topbar()+pageHeading("Unternehmungen","Offene und abgeschlossene Unternehmungen verwalten.")+renderVentures();
   if(view==="newVenture") app.innerHTML = nav()+topbar()+renderNewVenture();
   if(view==="ventureDetail") app.innerHTML = nav()+topbar()+renderVentureDetail();
   if(view==="expenseForm") app.innerHTML = nav()+topbar()+renderExpenseForm();
   if(view==="paymentForm") app.innerHTML = nav()+topbar()+renderPaymentForm();
-  if(view==="balances") app.innerHTML = nav()+topbar()+pageHeading("Salden","Gesamtabrechnung über alle offenen Unternehmungen.", pageIcon("balances"))+renderBalances(null);
-  if(view==="settings") app.innerHTML = nav()+topbar()+pageHeading("Einstellungen","Lokale Daten verwalten.", pageIcon("settings"))+renderSettings();
+  if(view==="balances") app.innerHTML = nav()+topbar()+pageHeading("Salden","Gesamtabrechnung über alle offenen Unternehmungen.")+renderBalances(null);
+  if(view==="settings") app.innerHTML = nav()+topbar()+pageHeading("Einstellungen","Lokale Daten verwalten.")+renderSettings();
   app.innerHTML += footer();
   attachDirtyListeners();
 }
@@ -661,9 +660,9 @@ function savePayment(silent=false){
 function renderSettings(){
   return `<section class="card"><h2>Einstellungen</h2>
     <div class="warning">
-      Version 3.8 speichert alle Daten weiterhin ausschließlich lokal in diesem Browser auf diesem Gerät.
+      Version 3.9 speichert alle Daten weiterhin ausschließlich lokal in diesem Browser auf diesem Gerät.
       Es findet noch keine Synchronisation zwischen mehreren Geräten oder Personen statt.
-      Die Menüpunkte unten sind teilweise bereits vorgesehen, aber noch nicht alle aktiv. Die Abrechnung wird ab Version 3.8 centgenau mit Ganzzahl-Arithmetik berechnet. Ab Version 3.8 zeigt die App bei Restcent-Aufteilungen einen kompakten Hinweis direkt bei den betroffenen Ausgaben an.
+      Die Menüpunkte unten sind teilweise bereits vorgesehen, aber noch nicht alle aktiv. Die Abrechnung wird ab Version 3.9 centgenau mit Ganzzahl-Arithmetik berechnet. Ab Version 3.9 zeigt die App bei Restcent-Aufteilungen einen kompakten Hinweis direkt bei den betroffenen Ausgaben an.
     </div>
   </section>
   <section class="card"><h2>Daten</h2>
@@ -706,5 +705,5 @@ if ("serviceWorker" in navigator && location.protocol !== "file:") {
   });
 }
 
-console.log("Ritter-Kasse 3.8 (Build 20260701-004)");
+console.log("Ritter-Kasse 3.9 (Build 20260701-005)");
 

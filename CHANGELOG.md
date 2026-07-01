@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.9 – Build 20260701-005
+
+- Bereichs-Piktogramme in die obere Seitenleiste verschoben.
+- Piktogramme erscheinen jetzt auch auf Unterseiten:
+  - Start: Burg
+  - Unternehmungen und Unterseiten: gekreuzte Schwerter
+  - Salden und Ausgleichszahlung: Geldfluss-Symbol
+  - Einstellungen: Zahnrad
+- Versionsnummern, Cache-Buster und Service-Worker-Cache konsistent aktualisiert.
+
 ## 3.8 – Build 20260701-004
 
 - Dezente Seiten-Piktogramme für die Hauptbereiche ergänzt:
